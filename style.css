@@ -1,0 +1,93 @@
+/* ===== General Page Styling ===== */
+body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg, #74b9ff, #a29bfe);
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ===== Panel Styling ===== */
+.html-panel {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    padding: 40px;
+    width: 320px;
+    text-align: center;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+/* ===== Text & Labels ===== */
+h2 {
+    color: #2d3436;
+    margin-bottom: 20px;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    text-align: left;
+    color: #636e72;
+    margin-bottom: 5px;
+}
+
+/* ===== Input Fields ===== */
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #dcdde1;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+    border-color: #0984e3;
+    outline: none;
+}
+
+/* ===== Buttons ===== */
+button {
+    background: #0984e3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+    margin: 5px;
+}
+
+button:hover {
+    background: #74b9ff;
+}
+
+/* ===== Table Styling ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    border: 1px solid #dfe6e9;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background-color: #0984e3;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f1f2f6;
+}
+
+

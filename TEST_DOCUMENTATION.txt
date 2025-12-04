@@ -1,0 +1,295 @@
+================================================================================
+                        TEST SUITE DOCUMENTATION
+                        Secure API Testing Guide
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. Environment Setup
+2. Running Tests
+3. Test Coverage Report
+4. Individual Test Explanations
+5. Troubleshooting
+
+
+================================================================================
+1. ENVIRONMENT SETUP
+================================================================================
+
+Prerequisites:
+--------------
+- Python 3.11 or higher installed
+- Git (optional, for cloning the repository)
+
+Step-by-Step Setup:
+-------------------
+
+1. Navigate to the project directory:
+   cd c:\Users\zakka\OneDrive\Documents\Secure_API-2
+
+2. Create a virtual environment:
+   python -m venv .venv
+
+3. Activate the virtual environment:
+   Windows PowerShell:
+     .\.venv\Scripts\Activate.ps1
+   
+   Windows CMD:
+     .\.venv\Scripts\activate.bat
+
+4. Install production dependencies:
+   pip install -r requirements.txt
+
+5. Install additional dependency (Flask-Limiter):
+   pip install Flask-Limiter
+
+6. Install development/test dependencies:
+   pip install -r requirements-dev.txt
+
+   This installs:
+   - pytest: Testing framework
+   - pytest-cov: Code coverage reporting
+   - freezegun: Time manipulation for testing
+   - coverage: Coverage analysis tool
+
+
+================================================================================
+2. RUNNING TESTS
+================================================================================
+
+Basic Test Run:
+---------------
+python -m pytest tests/test_api.py -v
+
+Quick Test Run (quiet mode):
+-----------------------------
+python -m pytest tests/test_api.py -q
+
+Run Tests with Coverage:
+------------------------
+python -m pytest tests/test_api.py --cov=GradesAccess --cov-report=term-missing -v
+
+Generate HTML Coverage Report:
+-------------------------------
+python -m pytest tests/test_api.py --cov=GradesAccess --cov-report=html
+(Open htmlcov/index.html in browser to view)
+
+Run Specific Test:
+------------------
+python -m pytest tests/test_api.py::test_login_success_staff -v
+
+
+================================================================================
+3. TEST COVERAGE REPORT
+================================================================================
+
+Current Coverage: 89% of GradesAccess.py
+
+The test suite covers:
+- Authentication & Authorization (login, tokens, role-based access)
+- SQL Injection Protection
+- Input Validation (missing fields, invalid formats)
+- Token Security (malformed, expired, missing tokens)
+- CORS Configuration
+- Rate Limiting
+- End-to-End Workflows
+
+
+================================================================================
+4. INDIVIDUAL TEST EXPLANATIONS
+================================================================================
+
+SECURITY: PASSWORD HASHING
+---------------------------
+Test: test_hash_password_deterministic
+Purpose: Verifies that password hashing is deterministic and produces 
+         consistent SHA-256 hashes for the same input with the same salt.
+Security Impact: Ensures passwords are properly hashed and not stored in 
+                 plain text.
+
+
+SECURITY: AUTHENTICATION - SUCCESS CASE
+----------------------------------------
+Test: test_login_success_staff
+Purpose: Verifies that valid staff credentials return a 200 status code, 
+         a JWT token, and the token contains correct email and role claims.
+Security Impact: Confirms authentication mechanism works correctly for 
+                 authorized users.
+
+
+SECURITY: AUTHENTICATION - FAILURE CASE
+----------------------------------------
+Test: test_login_invalid_credentials
+Purpose: Verifies that invalid credentials return a 401 Unauthorized status.
+Security Impact: Ensures unauthorized users cannot access the system with 
+                 incorrect credentials.
+
+
+SECURITY: TOKEN REQUIREMENT
+----------------------------
+Test: test_retrieve_requires_token
+Purpose: Verifies that accessing protected endpoints without a token returns 
+         401 Unauthorized.
+Security Impact: Ensures all protected endpoints require authentication via 
+                 JWT token.
+
+
+SECURITY: AUTHORIZATION - STAFF ACCESS
+---------------------------------------
+Test: test_retrieve_as_staff
+Purpose: Verifies that staff users with valid tokens can successfully retrieve 
+         student data.
+Security Impact: Confirms authorized staff can perform their intended 
+                 operations.
+
+
+SECURITY: INPUT VALIDATION - INVALID ID FORMAT
+-----------------------------------------------
+Test: test_retrieve_invalid_id_format
+Purpose: Verifies that non-numeric student IDs are rejected with 400 Bad Request.
+Security Impact: Prevents SQL injection and invalid data processing by 
+                 validating input format.
+
+
+SECURITY: CRUD OPERATIONS - ADD STUDENT
+----------------------------------------
+Test: test_add_student_success_and_duplicate
+Purpose: Verifies that:
+         1. Valid staff can add new students successfully
+         2. Duplicate email addresses are rejected with 409 Conflict
+Security Impact: Ensures data integrity and prevents duplicate accounts.
+
+
+SECURITY: CRUD OPERATIONS - UPDATE GRADE
+-----------------------------------------
+Test: test_update_grade_success_and_not_found
+Purpose: Verifies that:
+         1. Valid updates succeed and persist in database
+         2. Updates to non-existent students return 404 Not Found
+Security Impact: Ensures updates are applied correctly and only to existing 
+                 records.
+
+
+SECURITY: SQL INJECTION PROTECTION
+-----------------------------------
+Test: test_sql_injection_protection
+Purpose: Attempts SQL injection attack via studentId parameter (e.g., "1 OR 1=1")
+         and verifies it's rejected with 400 Bad Request.
+Security Impact: CRITICAL - Confirms parameterized queries prevent SQL injection 
+                 attacks that could expose or manipulate database data.
+
+
+SECURITY: RATE LIMITING
+------------------------
+Test: test_rate_limit_login
+Purpose: Verifies rate limiting is configured (though disabled in test 
+         environment to prevent flaky tests).
+Security Impact: Protects against brute-force authentication attacks.
+
+
+SECURITY: TOKEN VALIDATION - MALFORMED & EXPIRED
+-------------------------------------------------
+Test: test_malformed_and_expired_token
+Purpose: Verifies that:
+         1. Malformed tokens are rejected with 401 Unauthorized
+         2. Expired tokens are rejected with 401 Unauthorized
+Security Impact: CRITICAL - Prevents token tampering and ensures expired 
+                 sessions cannot be used.
+
+
+SECURITY: AUTHORIZATION - ROLE-BASED ACCESS CONTROL
+----------------------------------------------------
+Test: test_student_role_denied_endpoints
+Purpose: Verifies that student-role tokens are denied access (403 Forbidden) 
+         to staff-only endpoints (/retrieve, /add, /update).
+Security Impact: CRITICAL - Ensures proper role-based access control and 
+                 prevents privilege escalation.
+
+
+SECURITY: CORS HEADERS
+-----------------------
+Test: test_cors_headers_present
+Purpose: Verifies that CORS headers (Access-Control-Allow-Origin) are present 
+         in responses.
+Security Impact: Ensures proper cross-origin resource sharing configuration 
+                 for browser-based clients.
+
+
+FUNCTIONALITY: END-TO-END WORKFLOW
+-----------------------------------
+Test: test_end_to_end_smoke
+Purpose: Tests complete workflow: login → add student → retrieve → update → verify
+Security Impact: Validates that all security controls work together in a 
+                 realistic usage scenario.
+
+
+SECURITY: INPUT VALIDATION - MISSING LOGIN FIELDS
+--------------------------------------------------
+Test: test_login_missing_fields
+Purpose: Verifies that login attempts with empty email/password return 
+         400 Bad Request.
+Security Impact: Prevents processing of incomplete authentication requests.
+
+
+SECURITY: INPUT VALIDATION - ADD STUDENT FIELDS
+------------------------------------------------
+Test: test_add_missing_or_invalid_fields
+Purpose: Verifies that:
+         1. Missing required fields return 400 Bad Request
+         2. Invalid grade format (non-numeric) returns 400 Bad Request
+Security Impact: Ensures data integrity and prevents invalid data insertion.
+
+
+SECURITY: INPUT VALIDATION - UPDATE FIELDS
+-------------------------------------------
+Test: test_update_missing_or_invalid_fields
+Purpose: Verifies that:
+         1. Missing required fields return 400 Bad Request
+         2. Invalid grade format (non-numeric) returns 400 Bad Request
+Security Impact: Ensures only valid data is used for updates.
+
+
+================================================================================
+5. TROUBLESHOOTING
+================================================================================
+
+Issue: "ModuleNotFoundError: No module named 'flask_limiter'"
+Solution: Install Flask-Limiter: pip install Flask-Limiter
+
+Issue: "Python was not found"
+Solution: Ensure Python is installed and added to system PATH. 
+          Or use full path to Python executable.
+
+Issue: Tests fail with database errors
+Solution: Delete mydatabase.db if it exists, fixtures will create clean test DB.
+
+Issue: "pytest: command not found"
+Solution: Ensure virtual environment is activated and pytest is installed:
+          pip install pytest
+
+Issue: Coverage report not generating
+Solution: Install pytest-cov: pip install pytest-cov
+
+Issue: Token expiration test fails
+Solution: This may be due to system time/timezone issues. The test uses 
+          datetime.utcnow() - if this persists, review the datetime import.
+
+
+================================================================================
+NOTES
+================================================================================
+
+- All tests use an isolated sqlite database created by the fixture in 
+  tests/conftest.py
+- Rate limiting is disabled in tests to prevent flaky behavior
+- Tests use deterministic salts and encryption keys for reproducibility
+- Coverage of 89% indicates strong test coverage of security-critical paths
+- The 11% uncovered code consists mainly of edge cases and some error handlers
+
+
+================================================================================
+For more information, see:
+- pytest documentation: https://docs.pytest.org/
+- Flask testing: https://flask.palletsprojects.com/en/latest/testing/
+- Code coverage: https://coverage.readthedocs.io/
+================================================================================

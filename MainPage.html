@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title> Grades Access Demo </title>
+    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+    <script>
+        async function fetchData() {
+            try {
+                const id = document.getElementById("field3").value.trim();
+                const tableBody = document.getElementById("resultBody");
+                tableBody.innerHTML = "";
+                const token = localStorage.getItem("authToken");
+                const response = await fetch(`http://127.0.0.1:5000/retrieve?studentId=${encodeURIComponent(id)}`, {
+                    headers: { "Authorization": token }
+                });
+
+                const data = await response.json();
+                localStorage.setItem("retrievedStudent", JSON.stringify(data));
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${id}</td>
+                    <td>${data.results[0].name}</td>
+                    <td>${data.results[0].grade}</td>
+                `;
+                tableBody.appendChild(row);
+
+                document.getElementById("newGradeLabel").style.display = 'block';
+                document.getElementById("newGradeField").style.display = 'block';
+                document.getElementById("newGradeButton").style.display = 'block';
+
+
+            } catch (error) {
+                console.error("error fetching data: ", error);
+                document.getElementById("result").innerText = "Error fetching data: " + error;
+            }
+        }
+        async function NewData() {
+            try {
+                const name = document.getElementById("namefield").value.trim();
+                const email = document.getElementById("emailfield").value.trim();
+                const grade = document.getElementById("gradefield").value.trim();
+                const pass = document.getElementById("passfield").value.trim();
+
+                const token = localStorage.getItem("authToken");
+                const response = await fetch("http://127.0.0.1:5000/add", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        studentName: name,
+                        studentEmail: email,
+                        studentGrade: grade,
+                        studentPass: pass
+                    })
+                });
+
+                const data = await response.json();
+                
+                document.getElementById("msglabeladd").innerText = "Student added successfully with id " + data.ID[0].id
+                
+            } catch (error) {
+                console.error("error adding data: ", error);
+            }
+        }
+        async function Login() {
+            try {
+                
+                const email = document.getElementById("field1").value.trim();
+                const password = document.getElementById("field2").value.trim();
+
+                const response = await fetch(`http://127.0.0.1:5000/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`);
+                const data = await response.json();
+
+                if (data.results.length == 1){
+                    if (data.results[0].type == 'staff'){
+                        const loggedInUser = data.results[0];
+                        localStorage.setItem("loggedInUser", JSON.stringify(loggedInUser));
+
+                        localStorage.setItem("authToken", data.token)
+
+                        document.getElementById("loginpanel").style.display = 'none';
+                        document.getElementById("accesspanel").style.display = 'block';
+                        resetAllFields();
+                        document.getElementById("greeting").innerText = `Welcome, ${loggedInUser.name}!`;
+                    } 
+                    else{
+                        const loggedInUser = data.results[0];
+                        localStorage.setItem("loggedInUser", JSON.stringify(loggedInUser));
+                        resetAllFields();
+                        document.getElementById("loginpanel").style.display = 'none';
+                        document.getElementById("studentpanel").style.display = 'block';
+                        
+                        document.getElementById("greeting2").innerText = `Welcome, ${loggedInUser.name}!`;
+                        const tableBody = document.getElementById("studentBody");
+                        tableBody.innerHTML = "";
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${data.info[0].id}</td>
+                            <td>${data.info[0].name}</td>
+                            <td>${data.info[0].email}</td>
+                            <td>${data.info[0].grade}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    }
+                    
+                } else {
+                    alert("Invalid email or password")
+                }
+
+            } catch (error) {
+                console.error("error fetching data: ", error);
+                document.getElementById("result").innerText = "Error fetching data: " + error;
+            }
+        }
+        async function Update() {
+            try {
+                const student = JSON.parse(localStorage.getItem("retrievedStudent"));
+                const newGrade = document.getElementById("newGradeField").value.trim();
+                const token = localStorage.getItem("authToken");
+                const response = await fetch("http://127.0.0.1:5000/update", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        studentId: student.results[0].id,
+                        newGrade: newGrade
+                    })
+                });
+
+                const data = await response.json();
+                if (data.message == "success"){
+                    document.getElementById("field3").value = student.results[0].id;
+                    fetchData();
+                }
+
+            } catch (error) {
+                console.error("error fetching data: ", error);
+                document.getElementById("result").innerText = "Error fetching data: " + error;
+            }
+        }
+        async function Logout() {
+            document.getElementById("loginpanel").style.display = 'block';
+            document.getElementById("accesspanel").style.display = 'none';
+            document.getElementById("studentpanel").style.display = 'none';
+            resetAllFields();
+        }
+        async function Home() {
+            document.getElementById("loginpanel").style.display = 'none';
+            document.getElementById("accesspanel").style.display = 'block';
+            document.getElementById("addpanel").style.display = 'none';
+
+            resetAllFields();
+        }
+        async function Add() {
+            document.getElementById("loginpanel").style.display = 'none';
+            document.getElementById("accesspanel").style.display = 'none';
+            document.getElementById("addpanel").style.display = 'block';
+
+            resetAllFields();
+        }
+        function resetAllFields() {
+
+            document.getElementById("field1").value = "";
+            document.getElementById("field2").value = "";
+            document.getElementById("field3").value = "";
+            
+            document.getElementById("emailfield").value = "";
+            document.getElementById("gradefield").value = "";
+            document.getElementById("passfield").value = "";
+            document.getElementById("namefield").value = "";
+            document.getElementById("msglabeladd").innerText = "";
+            
+            document.getElementById("newGradeLabel").style.display = 'none';
+            document.getElementById("newGradeField").value = "";
+            document.getElementById("newGradeField").style.display = 'none';
+            document.getElementById("newGradeButton").style.display = 'none';
+
+  
+            document.getElementById("resultBody").innerHTML = "";    
+            document.getElementById("studentBody").innerHTML = "";
+        }
+    </script>
+
+    <div class="html-panel" id="loginpanel">
+        <h2>Login</h2>
+        <label for="field1">Email:</label><br>
+        <input type="text" id="field1" name="field1" required><br><br>
+        <label for="field2">Password:</label><br>
+        <input type="text" id="field2" name="field2" required><br><br>
+        <button type="button" onclick="Login()">Login</button>
+    </div>
+
+    <div class="html-panel" id="accesspanel" style="display:none;">
+        <h2 id="greeting"></h2>
+        <h3>Access Grades</h3>
+        <label for="field3">Student ID:</label><br>
+        <input type="text" id="field3" name="field3" required><br><br>
+
+        <button type="button" onclick="fetchData()">Search ID</button>
+        <button type="button" onclick="Add()">Add New Student</button>
+        <button type="button" onclick="Logout()">Log Out</button>
+
+
+        <table id="resultTable">
+            <thead>
+                <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody">
+                <!-- Table rows will be inserted here -->
+            </tbody>
+        </table>
+        
+        <label for="newGradeField" id="newGradeLabel" style="display:none;">New Grade:</label><br>
+        <input type="text" id="newGradeField" name="newGradeField" required style="display:none;"><br><br>
+        <button type="button" id="newGradeButton" onclick="Update()" style="display:none;">Update Grade</button>
+
+    </div>
+
+    <div class="html-panel" id="studentpanel" style="display:none;">
+        <h2 id="greeting2"></h2>
+        <h3>Student Information</h3>
+        <button type="button" onclick="Logout()">Log Out</button>
+
+
+        <table id="studentTable">
+            <thead>
+                <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody id="studentBody">
+                <!-- Table rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="html-panel" id="addpanel" style="display:none;">
+        <h2>Add New Student Account</h2>
+        <label for="namefield">Student Name:</label><br>
+        <input type="text" id="namefield" name="namefield" required><br><br>
+        <label for="gradefield">Student Grade:</label><br>
+        <input type="text" id="gradefield" name="gradefield" required><br><br>
+        <label for="emailfield">Student Email:</label><br>
+        <input type="text" id="emailfield" name="emailfield" required><br><br>
+        <label for="passfield">Student Password:</label><br>
+        <input type="text" id="passfield" name="passfield" required><br><br>
+        <button type="button" onclick="NewData()">Add Student</button>
+        <button type="button" onclick="Home()">Return Home</button><br>
+        <label id="msglabeladd"></label><br>
+    </div>
+
+</body>
+</html>
